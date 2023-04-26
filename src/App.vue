@@ -207,6 +207,11 @@ export default defineComponent({
     const tickersData = localStorage.getItem("crypto");
     if (tickersData) {
       this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach((ticker) => {
+        tickerApi.subscribeToTicker(ticker.name, (newPrice: number) => {
+          this.updateTickerPrice(ticker.id, newPrice);
+        });
+      });
     }
     setInterval(this.updateTickers, 5000);
   },
@@ -252,6 +257,15 @@ export default defineComponent({
     },
   },
   methods: {
+    updateTickerPrice(tickerId: string, price: number) {
+      const updateTickerIndex = this.tickers.findIndex(
+        (t) => t.id === tickerId
+      );
+      if (updateTickerIndex !== -1) {
+        this.tickers[updateTickerIndex].price = price;
+      }
+    },
+
     formatedPrice(price: number | string) {
       if (typeof price === "number") {
         return price < 1 ? price.toPrecision(2) : price.toFixed(2);
@@ -266,12 +280,15 @@ export default defineComponent({
       const exchangeData = await tickerApi.loadTicker(
         this.tickers.map((t) => t.name)
       );
+
       this.tickers.forEach((ticker) => {
-        const price = exchangeData[ticker.name.toUpperCase()];
-        if (!price) return;
-        ticker.price = price;
-        if (this.selectedTicker?.id === ticker.id) {
-          this.graph.push(price);
+        if (exchangeData) {
+          const price = exchangeData[ticker.name.toUpperCase()];
+          if (!price) return;
+          ticker.price = price;
+          if (this.selectedTicker?.id === ticker.id) {
+            this.graph.push(price);
+          }
         }
       });
     },
@@ -288,12 +305,19 @@ export default defineComponent({
         this.tickers = [...this.tickers, newTicker];
         this.ticker = "";
         this.isExistTicker = false;
+        tickerApi.subscribeToTicker(newTicker.name, (newPrice: number) => {
+          this.updateTickerPrice(newTicker.id, newPrice);
+        });
       }
     },
     select(ticker: ITicker) {
       this.selectedTicker = ticker;
     },
     deleteTicker(id: string) {
+      const foundedTickersName = this.tickers.find((t) => t.id === id)?.name;
+      if (foundedTickersName) {
+        tickerApi.unsubscribeFromTicker(foundedTickersName);
+      }
       this.tickers = this.tickers.filter((t) => t.id !== id);
     },
   },
