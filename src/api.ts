@@ -1,17 +1,20 @@
 import axios from "axios";
 
 const API_KEY =
-  "9d3082b720e1d067eaf9e6642f527260a444faafe38b6c3aa6a2c9573954082e";
+  "c2fdab0bddf7507d8d824785213988f466e800388a91b08ae83e37ebd88e43d4";
 
 const instance = axios.create({
   baseURL: "https://min-api.cryptocompare.com/data/",
 });
 
 const tickersHandler = new Map();
+const webSocket = new WebSocket(
+  `wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`
+);
 
 const AGREGATE_INDEX = "5";
 
-const sendToWebSocket = (ticker: string,action:string) => {
+const sendToWebSocket = (ticker: string, action: string) => {
   const message = JSON.stringify({
     action: action,
     subs: [`5~CCCAGG~${ticker}~USD`],
@@ -27,24 +30,32 @@ const sendToWebSocket = (ticker: string,action:string) => {
     },
     { once: true }
   );
+};
 
-        return Object.entries(updatedData).forEach(([currency, newPrice]) => {
-          const handlers = tickersHandler.get(currency) ?? [];
-          handlers.forEach((fn: Function) => fn(newPrice));
-        });
-      });
-  },
+webSocket.addEventListener("message", (e) => {
+  const {
+    TYPE: type,
+    FROMSYMBOL: currency,
+    PRICE: newPrice,
+  } = JSON.parse(e.data);
+  if (type !== AGREGATE_INDEX) return;
+  const handlers = tickersHandler.get(currency) || [];
+  handlers.forEach((fn: Function) => fn(newPrice));
+});
+
+export const tickerApi = {
   getCoinsList() {
     return instance.get("all/coinlist?summary=true").then((res) => res.data);
   },
 
-  subscribeToTicker(ticker: any, cb: Function) {
+  subscribeToTicker(ticker: string, cb: Function) {
     const subscribers = tickersHandler.get(ticker) || [];
     tickersHandler.set(ticker, [...subscribers, cb]);
+    sendToWebSocket(ticker, "SubAdd");
   },
 
   unsubscribeFromTicker(ticker: string) {
     tickersHandler.delete(ticker);
+    sendToWebSocket(ticker, "SubRemove");
   },
 };
-// window.tickers = tickers;

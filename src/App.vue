@@ -178,7 +178,6 @@ export default defineComponent({
         });
       });
     }
-    setInterval(this.updateTickers, 5000);
   },
   computed: {
     pageStateOption() {
@@ -228,6 +227,9 @@ export default defineComponent({
       );
       if (updateTickerIndex !== -1) {
         this.tickers[updateTickerIndex].price = price;
+        if (this.selectedTicker?.id === tickerId) {
+          this.graph.push(price);
+        }
       }
     },
 
@@ -236,26 +238,6 @@ export default defineComponent({
         return price < 1 ? price.toPrecision(2) : price.toFixed(2);
       }
       return "-";
-    },
-
-    async updateTickers() {
-      if (!this.tickers.length) {
-        return;
-      }
-      const exchangeData = await tickerApi.loadTicker(
-        this.tickers.map((t) => t.name)
-      );
-
-      this.tickers.forEach((ticker) => {
-        if (exchangeData) {
-          const price = exchangeData[ticker.name.toUpperCase()];
-          if (!price) return;
-          ticker.price = price;
-          if (this.selectedTicker?.id === ticker.id) {
-            this.graph.push(price);
-          }
-        }
-      });
     },
 
     add(tickerName: string) {
