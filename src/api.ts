@@ -9,22 +9,24 @@ const instance = axios.create({
 
 const tickersHandler = new Map();
 
-export const tickerApi = {
-  loadTicker(tickersName: string[]): Promise<any> {
-    return instance
-      .get(
-        `pricemulti?fsyms=${[...tickersHandler.keys()].join(
-          ","
-        )}&tsyms=USD&api_key=${API_KEY}`
-      )
-      .then((res) => {
-        const updatedData = Object.fromEntries(
-          Object.entries(res.data).map(([key, value]) => [
-            key,
-            //@ts-ignore
-            value.USD,
-          ])
-        );
+const AGREGATE_INDEX = "5";
+
+const sendToWebSocket = (ticker: string,action:string) => {
+  const message = JSON.stringify({
+    action: action,
+    subs: [`5~CCCAGG~${ticker}~USD`],
+  });
+  if (webSocket.readyState === WebSocket.OPEN) {
+    webSocket.send(message);
+    return;
+  }
+  webSocket.addEventListener(
+    "open",
+    () => {
+      webSocket.send(message);
+    },
+    { once: true }
+  );
 
         return Object.entries(updatedData).forEach(([currency, newPrice]) => {
           const handlers = tickersHandler.get(currency) ?? [];
