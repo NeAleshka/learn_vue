@@ -45,18 +45,11 @@
           "
           class="btn"
         >
-          <svg
+          <img
+            src="./assets/images/AddIcon.svg"
+            alt="add"
             class="-ml-0.5 mr-2 h-6 w-6"
-            xmlns="http://www.w3.org/2000/svg"
-            width="30"
-            height="30"
-            viewBox="0 0 24 24"
-            fill="#ffffff"
-          >
-            <path
-              d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
-            ></path>
-          </svg>
+          />
           Добавить
         </button>
       </section>
@@ -103,23 +96,12 @@
             </dd>
           </div>
           <div class="w-full border-t border-gray-200"></div>
-          <button
-            @click.stop="deleteTicker(t.id)"
-            class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
-          >
-            <svg
+          <button @click.stop="deleteTicker(t.id)" class="ticker_buttom">
+            <img
+              src="./assets/images/Basket.svg"
+              alt="Delete"
               class="h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="#718096"
-              aria-hidden="true"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
+            />
             Удалить
           </button>
         </div>
@@ -143,24 +125,7 @@
           class="absolute top-0 right-0"
           @click="selectedTicker.id = ''"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="30"
-            height="30"
-            x="0"
-            y="0"
-            viewBox="0 0 511.76 511.76"
-            style="enable-background: new 0 0 512 512"
-            xml:space="preserve"
-          >
-            <g>
-              <path
-                d="M436.896,74.869c-99.84-99.819-262.208-99.819-362.048,0c-99.797,99.819-99.797,262.229,0,362.048    c49.92,49.899,115.477,74.837,181.035,74.837s131.093-24.939,181.013-74.837C536.715,337.099,536.715,174.688,436.896,74.869z     M361.461,331.317c8.341,8.341,8.341,21.824,0,30.165c-4.16,4.16-9.621,6.251-15.083,6.251c-5.461,0-10.923-2.091-15.083-6.251    l-75.413-75.435l-75.392,75.413c-4.181,4.16-9.643,6.251-15.083,6.251c-5.461,0-10.923-2.091-15.083-6.251    c-8.341-8.341-8.341-21.845,0-30.165l75.392-75.413l-75.413-75.413c-8.341-8.341-8.341-21.845,0-30.165    c8.32-8.341,21.824-8.341,30.165,0l75.413,75.413l75.413-75.413c8.341-8.341,21.824-8.341,30.165,0    c8.341,8.32,8.341,21.824,0,30.165l-75.413,75.413L361.461,331.317z"
-                fill="#718096"
-                data-original="#000000"
-              ></path>
-            </g>
-          </svg>
+          <img src="./assets/images/Close.svg" alt="close" />
         </button>
       </section>
     </div>
@@ -213,7 +178,6 @@ export default defineComponent({
         });
       });
     }
-    setInterval(this.updateTickers, 5000);
   },
   computed: {
     pageStateOption() {
@@ -263,6 +227,9 @@ export default defineComponent({
       );
       if (updateTickerIndex !== -1) {
         this.tickers[updateTickerIndex].price = price;
+        if (this.selectedTicker?.id === tickerId) {
+          this.graph.push(price);
+        }
       }
     },
 
@@ -271,26 +238,6 @@ export default defineComponent({
         return price < 1 ? price.toPrecision(2) : price.toFixed(2);
       }
       return "-";
-    },
-
-    async updateTickers() {
-      if (!this.tickers.length) {
-        return;
-      }
-      const exchangeData = await tickerApi.loadTicker(
-        this.tickers.map((t) => t.name)
-      );
-
-      this.tickers.forEach((ticker) => {
-        if (exchangeData) {
-          const price = exchangeData[ticker.name.toUpperCase()];
-          if (!price) return;
-          ticker.price = price;
-          if (this.selectedTicker?.id === ticker.id) {
-            this.graph.push(price);
-          }
-        }
-      });
     },
 
     add(tickerName: string) {
