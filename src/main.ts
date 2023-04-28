@@ -1,6 +1,6 @@
-import {createApp} from 'vue'
-import App from './App.vue'
-import './index.css'
+import { createApp } from "vue";
+import withUUID from "vue-uuid";
+import App from "./App.vue";
+import "./index.css";
 
-
-createApp(App).mount('#app')
+createApp(App).use(withUUID).mount("#app");
