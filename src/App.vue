@@ -2,37 +2,48 @@
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
       <section>
+        <label for="wallet" class="block text-sm font-medium text-gray-700"
+          >Тикер</label
+        >
         <div class="flex">
-          <div class="max-w-xs">
-            <label for="wallet" class="block text-sm font-medium text-gray-700"
-              >Тикер</label
-            >
-            <div class="mt-1 relative rounded-md shadow-md w-fit mb-2">
+          <div class="mt-1 rounded-md mb-2 w-full">
+            <div class="flex justify-between w-full items-start">
+              <div>
+                <input
+                  type="text"
+                  @input="isExistTiker = false"
+                  v-model="tickerName"
+                  name="wallet"
+                  id="wallet"
+                  class="mb-2 py-2 pl-1 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
+                  placeholder="Например DOGE"
+                />
+                <div
+                  v-if="foundedCoins.length && tickerName"
+                  class="flex bg-white shadow-md p-1 rounded-md flex-wrap"
+                >
+                  <span
+                    v-for="coin in foundedCoins"
+                    @click="addTicker(coin)"
+                    class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
+                  >
+                    {{ coin }}
+                  </span>
+                </div>
+              </div>
+
               <input
-                type="text"
-                @input="isExistTiker = false"
-                v-model="tickerName"
-                name="wallet"
-                id="wallet"
-                class="block w-full py-2 pl-1 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
-                placeholder="Например DOGE"
+                @input="filteredTickers"
+                v-model="filter"
+                class="input max-w-[200px]"
+                placeholder="Поиск"
+                v-if="tickers.length"
               />
             </div>
-            <div
-              v-if="foundedCoins.length && tickerName"
-              class="flex bg-white shadow-md p-1 rounded-md flex-wrap"
-            >
-              <span
-                v-for="coin in foundedCoins"
-                @click="addTicker(coin)"
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                {{ coin }}
-              </span>
-            </div>
-            <div v-if="isExistTiker" class="text-sm text-red-600">
-              Такой тикер уже добавлен
-            </div>
+          </div>
+
+          <div v-if="isExistTiker" class="text-sm text-red-600">
+            Такой тикер уже добавлен
           </div>
         </div>
         <button
@@ -55,12 +66,13 @@
           </svg>
           Добавить
         </button>
+        <div></div>
       </section>
 
-      <hr class="w-full border-t border-gray-600 my-4" />
+      <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4" />
       <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
         <div
-          v-for="ticker in tickers"
+          v-for="ticker in filteredTickers"
           class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
         >
           <div class="px-4 py-5 sm:p-6 text-center">
@@ -90,8 +102,8 @@
           </button>
         </div>
       </dl>
-      <hr class="w-full border-t border-gray-600 my-4" />
-      <section class="relative" v-if="selectedTicker">
+      <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4" />
+      <section class="relative" v-if="selectedTicker?.id">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
           VUE - USD
         </h3>
@@ -144,18 +156,29 @@ export default defineComponent({
       isExistTiker: false,
       coinsList: [] as string[],
       foundedCoins: [] as string[],
-      selectedTicker: {} as ITicker | null,
+      selectedTicker: {} as ITicker,
+      page: 1,
+      filter: "",
     };
   },
   created() {
-    this.selectedTicker = null;
+    const tickersData = localStorage.getItem("crypto");
+    if (tickersData?.length) {
+      this.tickers = JSON.parse(tickersData);
+    }
     getCoinsList().then((res) => {
       this.coinsList = res.sort((a, b) => {
         return a.length - b.length;
       });
     });
   },
-  computed: {},
+  computed: {
+    filteredTickers() {
+      return (this.tickers = this.tickers.filter((ticker) =>
+        ticker.name.toUpperCase().includes(this.filter.toUpperCase())
+      ));
+    },
+  },
   methods: {
     addTicker(tickerName: string) {
       const newTicker: ITicker = {
@@ -164,17 +187,19 @@ export default defineComponent({
         price: "-",
       };
       this.tickers = [newTicker, ...this.tickers];
+      localStorage.setItem("crypto", JSON.stringify([...this.tickers]));
     },
     deleteTicker(tickerToRemove: ITicker) {
       this.tickers = this.tickers.filter(
         (ticker) => ticker.id !== tickerToRemove.id
       );
+      localStorage.setItem("crypto", JSON.stringify(this.tickers));
     },
   },
   watch: {
     tickerName() {
       const foundedCoins = this.coinsList.filter((coin) =>
-        coin.includes(this.tickerName)
+        coin.includes(this.tickerName.toUpperCase())
       );
       if (foundedCoins.length) {
         this.foundedCoins = foundedCoins.slice(0, 4);
