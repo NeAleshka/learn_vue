@@ -31,9 +31,7 @@
                   </span>
                 </div>
               </div>
-
               <input
-                @input="filteredTickers"
                 v-model="filter"
                 class="input max-w-[200px]"
                 placeholder="Поиск"
@@ -66,13 +64,20 @@
           </svg>
           Добавить
         </button>
-        <div></div>
+        <div>
+          <button class="navBtn mr-2" @click="page -= 1" v-if="page > 1">
+            Назад
+          </button>
+          <button class="navBtn" @click="page += 1" v-if="hasNextPage">
+            Вперёд
+          </button>
+        </div>
       </section>
 
       <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4" />
       <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
         <div
-          v-for="ticker in filteredTickers"
+          v-for="ticker in paginationTickers"
           class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
         >
           <div class="px-4 py-5 sm:p-6 text-center">
@@ -174,9 +179,25 @@ export default defineComponent({
   },
   computed: {
     filteredTickers() {
-      return (this.tickers = this.tickers.filter((ticker) =>
+      return this.tickers.filter((ticker) =>
         ticker.name.toUpperCase().includes(this.filter.toUpperCase())
-      ));
+      );
+    },
+
+    startIndex() {
+      return (this.page - 1) * 6;
+    },
+
+    endIndex() {
+      return this.page * 6;
+    },
+
+    hasNextPage() {
+      return this.filteredTickers.length > this.endIndex;
+    },
+
+    paginationTickers() {
+      return this.filteredTickers.slice(this.startIndex, this.endIndex);
     },
   },
   methods: {
@@ -203,6 +224,12 @@ export default defineComponent({
       );
       if (foundedCoins.length) {
         this.foundedCoins = foundedCoins.slice(0, 4);
+      }
+    },
+
+    paginationTickers() {
+      if (this.page > 1 && !this.paginationTickers.length) {
+        this.page -= 1;
       }
     },
   },
