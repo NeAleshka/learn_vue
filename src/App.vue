@@ -33,6 +33,9 @@
             <div v-if="isExistTicker" class="text-sm text-red-600">
               Такой тикер уже добавлен
             </div>
+            <div v-if="incorrectCoin" class="text-sm text-red-600">
+              Такой тикер не существует
+            </div>
           </div>
         </div>
 
@@ -92,11 +95,11 @@
               {{ t.name }}
             </dt>
             <dd class="mt-1 text-3xl font-semibold text-gray-900">
-              {{ formatedPrice(t.price) }}
+              {{ formatPrice(t.price) }}
             </dd>
           </div>
           <div class="w-full border-t border-gray-200"></div>
-          <button @click.stop="deleteTicker(t.id)" class="ticker_buttom">
+          <button @click.stop="deleteTicker(t.id)" class="ticker_button">
             <img
               src="./assets/images/Basket.svg"
               alt="Delete"
@@ -111,7 +114,10 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
           {{ selectedTicker.name }} - USD
         </h3>
-        <div class="flex items-end border-gray-600 border-b border-l h-64">
+        <div
+          class="flex items-end border-gray-600 border-b border-l h-64"
+          ref="graph"
+        >
           <div
             v-for="(bar, i) in normalizeGraph"
             :key="i"
@@ -150,8 +156,19 @@ export default defineComponent({
       foundedTickers: [] as string[],
       filter: "",
       page: 1,
+      incorrectCoin: false,
+      maxColoumnGraph: 1,
     };
   },
+
+  mounted() {
+    window.addEventListener("resize", this.calculatedMaxColoumnGraph);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener("resize", this.calculatedMaxColoumnGraph);
+  },
+
   created() {
     let urlParams = new URLSearchParams(window.location.search);
     const urlFilter = urlParams.get("filter");
@@ -165,7 +182,7 @@ export default defineComponent({
       this.page = Number(urlPage);
     }
 
-    const tickerList = tickerApi.getCoinsList().then((res) => {
+    tickerApi.getCoinsList().then((res) => {
       this.coinList = res.Data;
     });
 
@@ -221,19 +238,30 @@ export default defineComponent({
     },
   },
   methods: {
+    calculatedMaxColoumnGraph() {
+      if (this.$refs.graph) {
+        //@ts-ignore
+        this.maxColoumnGraph = this.$refs.graph.clientWidth / 38;
+      } else return;
+    },
+
     updateTickerPrice(tickerId: string, price: number) {
       const updateTickerIndex = this.tickers.findIndex(
         (t) => t.id === tickerId
       );
       if (updateTickerIndex !== -1) {
-        this.tickers[updateTickerIndex].price = price;
-        if (this.selectedTicker?.id === tickerId) {
+        const prevPrice = this.tickers[updateTickerIndex].price;
+        this.tickers[updateTickerIndex].price = price ? price : prevPrice;
+        if (this.selectedTicker?.id === tickerId && price) {
           this.graph.push(price);
+          while (this.graph.length > this.maxColoumnGraph) {
+            this.graph.shift();
+          }
         }
       }
     },
 
-    formatedPrice(price: number | string) {
+    formatPrice(price: number | string) {
       if (typeof price === "number") {
         return price < 1 ? price.toPrecision(2) : price.toFixed(2);
       }
@@ -241,24 +269,29 @@ export default defineComponent({
     },
 
     add(tickerName: string) {
+      if (!Object.keys(this.coinList).find((t) => t === tickerName)) {
+        this.incorrectCoin = true;
+        return;
+      }
       if (this.tickers.find((t) => t.name === tickerName)) {
         this.isExistTicker = true;
-      } else {
-        const newTicker: ITicker = {
-          name: tickerName.toUpperCase(),
-          price: "-",
-          id: new Date().toString(),
-        };
-        this.tickers = [...this.tickers, newTicker];
-        this.ticker = "";
-        this.isExistTicker = false;
-        tickerApi.subscribeToTicker(newTicker.name, (newPrice: number) => {
-          this.updateTickerPrice(newTicker.id, newPrice);
-        });
+        return;
       }
+
+      const newTicker: ITicker = {
+        name: tickerName.toUpperCase(),
+        price: "-",
+        id: new Date().toString(),
+      };
+      this.tickers = [...this.tickers, newTicker];
+      this.ticker = "";
+      this.isExistTicker = false;
+      tickerApi.subscribeToTicker(newTicker.name, (newPrice: number) => {
+        this.updateTickerPrice(newTicker.id, newPrice);
+      });
     },
     select(ticker: ITicker) {
-      this.selectedTicker = ticker;
+      this.selectedTicker = { ...ticker };
     },
     deleteTicker(id: string) {
       const foundedTickersName = this.tickers.find((t) => t.id === id)?.name;
@@ -271,6 +304,7 @@ export default defineComponent({
   watch: {
     ticker() {
       this.isExistTicker = false;
+      this.incorrectCoin = false;
       this.foundedTickers = Object.keys(this.coinList);
       this.foundedTickers = this.foundedTickers
         .filter((t) => t.includes(this.ticker))

@@ -32,15 +32,21 @@ const sendToWebSocket = (ticker: string, action: string) => {
   );
 };
 
+
+
 webSocket.addEventListener("message", (e) => {
   const {
     TYPE: type,
     FROMSYMBOL: currency,
     PRICE: newPrice,
   } = JSON.parse(e.data);
-  if (type !== AGREGATE_INDEX) return;
-  const handlers = tickersHandler.get(currency) || [];
-  handlers.forEach((fn: Function) => fn(newPrice));
+  if (type === AGREGATE_INDEX) {
+    const handlers = tickersHandler.get(currency) || [];
+    handlers.forEach((fn: Function) => fn(newPrice));
+  }
+  if(type==='500'){
+
+  }
 });
 
 export const tickerApi = {
