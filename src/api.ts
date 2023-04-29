@@ -81,3 +81,8 @@ export const subscribeToTicker = (ticketName: string, cb: Function) => {
   tickersHandlers.set(ticketName, [...subscribers, cb]);
   sendToWS(ticketName, "SubAdd");
 };
+
+export  const unsubscribeToTicker = (tickerName:string) => {
+  tickersHandlers.delete(tickerName)
+  sendToWS(tickerName,'SubRemove')
+}

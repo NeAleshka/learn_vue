@@ -18,6 +18,9 @@
                     class="mb-2 py-2 pl-1 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
                     placeholder="Например DOGE"
                 />
+                <div v-if="isExistTicker" class="text-sm text-red-600 mb-2">
+                  Такой тикер уже добавлен
+                </div>
                 <div
                     v-if="foundedCoins.length && tickerName"
                     class="flex bg-white shadow-md p-1 rounded-md flex-wrap"
@@ -38,10 +41,6 @@
                   v-if="tickers.length"
               />
             </div>
-          </div>
-
-          <div v-if="isExistTicker" class="text-sm text-red-600">
-            Такой тикер уже добавлен
           </div>
         </div>
         <button
@@ -124,7 +123,7 @@
 <script lang="ts">
 import {defineComponent} from "vue";
 import {uuid} from "vue-uuid";
-import {getCoinsList, subscribeToTicker} from "./api";
+import {getCoinsList, subscribeToTicker, unsubscribeToTicker} from "./api";
 import type {ITicker, ITickerWSRequest} from "./interfaces";
 
 export default defineComponent({
@@ -143,6 +142,14 @@ export default defineComponent({
     };
   },
   created() {
+    let urlParams=new URLSearchParams(window.location.search)
+
+    if(urlParams.has('filter')) {
+      this.filter = urlParams.get('filter')||''
+    }
+    if(urlParams.has('page')) {
+      this.page =Number(urlParams.get('page'))
+    }
     const tickersData = localStorage.getItem("crypto");
     if (tickersData?.length) {
       this.tickers = JSON.parse(tickersData);
@@ -159,6 +166,14 @@ export default defineComponent({
     });
   },
   computed: {
+
+    pageStateOption(){
+      return{
+        page:this.page,
+        filter:this.filter,
+      }
+    },
+
     filteredTickers() {
       return this.tickers.filter((ticker) =>
           ticker.name?.toUpperCase().includes(this.filter.toUpperCase())
@@ -218,6 +233,11 @@ export default defineComponent({
     },
 
     addTicker(tickerName: string) {
+      const foundedTickerIndex=this.tickers.findIndex(t=>t.name?.toUpperCase()===tickerName.toUpperCase())
+      if(foundedTickerIndex!==-1){
+        this.isExistTicker=true
+        return
+      }
       const newTicker: ITicker = {
         id: uuid.v4(),
         name: tickerName,
@@ -240,6 +260,7 @@ export default defineComponent({
           (ticker) => ticker.id !== tickerToRemove.id
       );
       localStorage.setItem("crypto", JSON.stringify(this.tickers));
+      unsubscribeToTicker(tickerToRemove.name||'')
     },
   },
   watch: {
@@ -259,6 +280,12 @@ export default defineComponent({
     },
     selectedTicker() {
       this.graph = [];
+    },
+    filter(){
+      this.page=1
+    },
+    pageStateOption(value){
+      window.history.pushState(null,document.title,`?filter=${value.filter}&page=${value.page}`)
     },
   },
 });
