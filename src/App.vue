@@ -3,65 +3,54 @@
     <div class="container">
       <section>
         <label for="wallet" class="block text-sm font-medium text-gray-700"
-          >Тикер</label
+        >Тикер</label
         >
         <div class="flex">
           <div class="mt-1 rounded-md mb-2 w-full">
             <div class="flex justify-between w-full items-start">
               <div>
                 <input
-                  type="text"
-                  @input="isExistTiker = false"
-                  v-model="tickerName"
-                  name="wallet"
-                  id="wallet"
-                  class="mb-2 py-2 pl-1 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
-                  placeholder="Например DOGE"
+                    type="text"
+                    @input="isExistTicker = false"
+                    v-model="tickerName"
+                    name="wallet"
+                    id="wallet"
+                    class="mb-2 py-2 pl-1 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
+                    placeholder="Например DOGE"
                 />
                 <div
-                  v-if="foundedCoins.length && tickerName"
-                  class="flex bg-white shadow-md p-1 rounded-md flex-wrap"
+                    v-if="foundedCoins.length && tickerName"
+                    class="flex bg-white shadow-md p-1 rounded-md flex-wrap"
                 >
                   <span
-                    v-for="coin in foundedCoins"
-                    @click="addTicker(coin)"
-                    class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
+                      v-for="coin in foundedCoins"
+                      @click="addTicker(coin)"
+                      class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
                   >
                     {{ coin }}
                   </span>
                 </div>
               </div>
               <input
-                v-model="filter"
-                class="input max-w-[200px]"
-                placeholder="Поиск"
-                v-if="tickers.length"
+                  v-model="filter"
+                  class="input max-w-[200px]"
+                  placeholder="Поиск"
+                  v-if="tickers.length"
               />
             </div>
           </div>
 
-          <div v-if="isExistTiker" class="text-sm text-red-600">
+          <div v-if="isExistTicker" class="text-sm text-red-600">
             Такой тикер уже добавлен
           </div>
         </div>
         <button
-          type="button"
-          @click="addTicker(tickerName)"
-          v-if="tickerName.length"
-          class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            type="button"
+            @click="addTicker(tickerName)"
+            v-if="tickerName.length"
+            class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
-          <svg
-            class="-ml-0.5 mr-2 h-6 w-6"
-            xmlns="http://www.w3.org/2000/svg"
-            width="30"
-            height="30"
-            viewBox="0 0 24 24"
-            fill="#ffffff"
-          >
-            <path
-              d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
-            ></path>
-          </svg>
+          <img src="src/assets/images/Plus.svg" alt="add" class="-ml-0.5 mr-2 h-6 w-6"/>
           Добавить
         </button>
         <div>
@@ -74,89 +63,58 @@
         </div>
       </section>
 
-      <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4" />
+      <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4"/>
       <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
         <div
-          v-for="ticker in paginationTickers"
-          :class="[
+            v-for="ticker in paginationTickers"
+            :class="[
             'ticker',
             {
               'border-4': ticker.id === selectedTicker.id,
             },
           ]"
-          @click="selectTicker(ticker)"
+            @click="selectTicker(ticker)"
         >
           <div class="px-4 py-5 sm:p-6 text-center">
             <dt
-              class="text-sm font-medium text-gray-500 truncate"
-              v-if="!ticker.haveError"
+                class="text-sm font-medium text-gray-500 truncate"
+                v-if="!ticker.haveError"
             >
               {{ ticker.name }} - USD
             </dt>
 
             <dd
-              class="mt-1 font-semibold text-gray-900"
-              :style="{ fontSize: ticker.haveError ? '20px' : '1.8rem' }"
+                class="mt-1 font-semibold text-gray-900"
+                :style="{ fontSize: ticker.haveError ? '20px' : '1.8rem' }"
             >
               {{ ticker.price }}
             </dd>
           </div>
           <div class="w-full border-t border-gray-200"></div>
           <button
-            @click.stop="deleteTicker(ticker)"
-            class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
+              @click.stop="deleteTicker(ticker)"
+              class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
           >
-            <svg
-              class="h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="#718096"
-              aria-hidden="true"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              ></path></svg
-            >Удалить
+            <img src="src/assets/images/Basket.svg" alt="del" class="h-5 w-5">
+            Удалить
           </button>
         </div>
       </dl>
-      <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4" />
+      <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4"/>
       <section class="relative" v-if="selectedTicker?.id">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          VUE - USD
+          {{selectedTicker.name}} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            v-for="(height, index) in normalizeGraph"
-            :key="index"
-            :style="{ height: `${height}%` }"
-            class="bg-blue-800 w-10 border"
+              v-for="(height, index) in normalizeGraph"
+              :key="index"
+              :style="{ height: `${height}%` }"
+              class="bg-blue-800 w-10 border"
           ></div>
         </div>
-        <button type="button" class="absolute top-0 right-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            xmlns:svgjs="http://svgjs.com/svgjs"
-            version="1.1"
-            width="30"
-            height="30"
-            x="0"
-            y="0"
-            viewBox="0 0 511.76 511.76"
-            style="enable-background: new 0 0 512 512"
-            xml:space="preserve"
-          >
-            <g>
-              <path
-                d="M436.896,74.869c-99.84-99.819-262.208-99.819-362.048,0c-99.797,99.819-99.797,262.229,0,362.048    c49.92,49.899,115.477,74.837,181.035,74.837s131.093-24.939,181.013-74.837C536.715,337.099,536.715,174.688,436.896,74.869z     M361.461,331.317c8.341,8.341,8.341,21.824,0,30.165c-4.16,4.16-9.621,6.251-15.083,6.251c-5.461,0-10.923-2.091-15.083-6.251    l-75.413-75.435l-75.392,75.413c-4.181,4.16-9.643,6.251-15.083,6.251c-5.461,0-10.923-2.091-15.083-6.251    c-8.341-8.341-8.341-21.845,0-30.165l75.392-75.413l-75.413-75.413c-8.341-8.341-8.341-21.845,0-30.165    c8.32-8.341,21.824-8.341,30.165,0l75.413,75.413l75.413-75.413c8.341-8.341,21.824-8.341,30.165,0    c8.341,8.32,8.341,21.824,0,30.165l-75.413,75.413L361.461,331.317z"
-                fill="#718096"
-                data-original="#000000"
-              ></path>
-            </g>
-          </svg>
+        <button type="button" class="absolute top-0 right-0" @click="selectTicker({id:''})">
+          <img src="src/assets/images/Xmark.svg" alt="close">
         </button>
       </section>
     </div>
@@ -164,10 +122,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { uuid } from "vue-uuid";
-import { getCoinsList, subscribeToTicker } from "./api";
-import type { ITicker, ITickerWSRequets } from "./interfaces";
+import {defineComponent} from "vue";
+import {uuid} from "vue-uuid";
+import {getCoinsList, subscribeToTicker} from "./api";
+import type {ITicker, ITickerWSRequest} from "./interfaces";
 
 export default defineComponent({
   name: "App",
@@ -175,7 +133,7 @@ export default defineComponent({
     return {
       tickerName: "",
       tickers: [] as ITicker[],
-      isExistTiker: false,
+      isExistTicker: false,
       coinsList: [] as string[],
       foundedCoins: [] as string[],
       selectedTicker: {} as ITicker,
@@ -189,8 +147,8 @@ export default defineComponent({
     if (tickersData?.length) {
       this.tickers = JSON.parse(tickersData);
       this.tickers.forEach((ticker) => {
-        subscribeToTicker(ticker.name, (wsRequest: ITickerWSRequets) => {
-          this.updateTickers(ticker.id, wsRequest);
+        subscribeToTicker(ticker?.name||'', (wsRequest: ITickerWSRequest) => {
+          this.updateTickers(ticker?.id, wsRequest);
         });
       });
     }
@@ -203,7 +161,7 @@ export default defineComponent({
   computed: {
     filteredTickers() {
       return this.tickers.filter((ticker) =>
-        ticker.name.toUpperCase().includes(this.filter.toUpperCase())
+          ticker.name?.toUpperCase().includes(this.filter.toUpperCase())
       );
     },
 
@@ -230,24 +188,28 @@ export default defineComponent({
         return this.graph.map(() => 50);
       }
       return this.graph.map(
-        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+          (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
       );
     },
   },
   methods: {
-    updateTickers(tickerId: string, wsRequest: ITickerWSRequets) {
+    updateTickers(tickerId: string|undefined, wsRequest: ITickerWSRequest) {
       const updateTickerIndex = this.tickers.findIndex(
-        (tiker) => tiker.id === tickerId
+          (ticker) => ticker.id === tickerId
       );
+
       if (wsRequest.type === "5" && updateTickerIndex !== -1) {
         const prevPrice = this.tickers[updateTickerIndex].price;
         this.tickers[updateTickerIndex].price = wsRequest.newPrice
-          ? wsRequest.newPrice
-          : prevPrice;
-        if (this.selectedTicker.id === tickerId && wsRequest.newPrice) {
+            ? wsRequest.newPrice
+            : prevPrice;
+        this.tickers[updateTickerIndex].haveError=false
+        if (this.selectedTicker?.id === tickerId && wsRequest.newPrice) {
           this.graph.push(wsRequest.newPrice);
         }
       }
+
+
       if (wsRequest.type === "500") {
         const nane = this.tickers[updateTickerIndex].name;
         this.tickers[updateTickerIndex].price = `${nane} not calculating now`;
@@ -261,7 +223,7 @@ export default defineComponent({
         name: tickerName,
         price: "-",
       };
-      subscribeToTicker(newTicker.name, (wsRequest: ITickerWSRequets) => {
+      subscribeToTicker(newTicker.name||'', (wsRequest: ITickerWSRequest) => {
         this.updateTickers(newTicker.id, wsRequest);
       });
 
@@ -275,7 +237,7 @@ export default defineComponent({
 
     deleteTicker(tickerToRemove: ITicker) {
       this.tickers = this.tickers.filter(
-        (ticker) => ticker.id !== tickerToRemove.id
+          (ticker) => ticker.id !== tickerToRemove.id
       );
       localStorage.setItem("crypto", JSON.stringify(this.tickers));
     },
@@ -283,7 +245,7 @@ export default defineComponent({
   watch: {
     tickerName() {
       const foundedCoins = this.coinsList.filter((coin) =>
-        coin.includes(this.tickerName.toUpperCase())
+          coin.includes(this.tickerName.toUpperCase())
       );
       if (foundedCoins.length) {
         this.foundedCoins = foundedCoins.slice(0, 4);
