@@ -78,17 +78,32 @@
       <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
         <div
           v-for="ticker in paginationTickers"
-          class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
+          :class="[
+            'ticker',
+            {
+              'border-4': ticker.id === selectedTicker.id,
+            },
+          ]"
+          @click="selectTicker(ticker)"
         >
           <div class="px-4 py-5 sm:p-6 text-center">
-            <dt class="text-sm font-medium text-gray-500 truncate">
+            <dt
+              class="text-sm font-medium text-gray-500 truncate"
+              v-if="!ticker.haveError"
+            >
               {{ ticker.name }} - USD
             </dt>
-            <dd class="mt-1 text-3xl font-semibold text-gray-900">1.11</dd>
+
+            <dd
+              class="mt-1 font-semibold text-gray-900"
+              :style="{ fontSize: ticker.haveError ? '20px' : '1.8rem' }"
+            >
+              {{ ticker.price }}
+            </dd>
           </div>
           <div class="w-full border-t border-gray-200"></div>
           <button
-            @click="deleteTicker(ticker)"
+            @click.stop="deleteTicker(ticker)"
             class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
           >
             <svg
@@ -113,10 +128,12 @@
           VUE - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-          <div class="bg-purple-800 border w-10 h-24"></div>
-          <div class="bg-purple-800 border w-10 h-32"></div>
-          <div class="bg-purple-800 border w-10 h-48"></div>
-          <div class="bg-purple-800 border w-10 h-16"></div>
+          <div
+            v-for="(height, index) in normalizeGraph"
+            :key="index"
+            :style="{ height: `${height}%` }"
+            class="bg-blue-800 w-10 border"
+          ></div>
         </div>
         <button type="button" class="absolute top-0 right-0">
           <svg
@@ -149,8 +166,8 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { uuid } from "vue-uuid";
-import { getCoinsList } from "./api";
-import type { ITicker } from "./interfaces";
+import { getCoinsList, subscribeToTicker } from "./api";
+import type { ITicker, ITickerWSRequets } from "./interfaces";
 
 export default defineComponent({
   name: "App",
@@ -164,12 +181,18 @@ export default defineComponent({
       selectedTicker: {} as ITicker,
       page: 1,
       filter: "",
+      graph: [] as number[],
     };
   },
   created() {
     const tickersData = localStorage.getItem("crypto");
     if (tickersData?.length) {
       this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach((ticker) => {
+        subscribeToTicker(ticker.name, (wsRequest: ITickerWSRequets) => {
+          this.updateTickers(ticker.id, wsRequest);
+        });
+      });
     }
     getCoinsList().then((res) => {
       this.coinsList = res.sort((a, b) => {
@@ -199,17 +222,57 @@ export default defineComponent({
     paginationTickers() {
       return this.filteredTickers.slice(this.startIndex, this.endIndex);
     },
+
+    normalizeGraph() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+      if (maxValue === minValue) {
+        return this.graph.map(() => 50);
+      }
+      return this.graph.map(
+        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+      );
+    },
   },
   methods: {
+    updateTickers(tickerId: string, wsRequest: ITickerWSRequets) {
+      const updateTickerIndex = this.tickers.findIndex(
+        (tiker) => tiker.id === tickerId
+      );
+      if (wsRequest.type === "5" && updateTickerIndex !== -1) {
+        const prevPrice = this.tickers[updateTickerIndex].price;
+        this.tickers[updateTickerIndex].price = wsRequest.newPrice
+          ? wsRequest.newPrice
+          : prevPrice;
+        if (this.selectedTicker.id === tickerId && wsRequest.newPrice) {
+          this.graph.push(wsRequest.newPrice);
+        }
+      }
+      if (wsRequest.type === "500") {
+        const nane = this.tickers[updateTickerIndex].name;
+        this.tickers[updateTickerIndex].price = `${nane} not calculating now`;
+        this.tickers[updateTickerIndex].haveError = true;
+      }
+    },
+
     addTicker(tickerName: string) {
       const newTicker: ITicker = {
         id: uuid.v4(),
         name: tickerName,
         price: "-",
       };
+      subscribeToTicker(newTicker.name, (wsRequest: ITickerWSRequets) => {
+        this.updateTickers(newTicker.id, wsRequest);
+      });
+
       this.tickers = [newTicker, ...this.tickers];
       localStorage.setItem("crypto", JSON.stringify([...this.tickers]));
     },
+
+    selectTicker(ticker: ITicker) {
+      this.selectedTicker = ticker;
+    },
+
     deleteTicker(tickerToRemove: ITicker) {
       this.tickers = this.tickers.filter(
         (ticker) => ticker.id !== tickerToRemove.id
@@ -231,6 +294,9 @@ export default defineComponent({
       if (this.page > 1 && !this.paginationTickers.length) {
         this.page -= 1;
       }
+    },
+    selectedTicker() {
+      this.graph = [];
     },
   },
 });
