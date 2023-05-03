@@ -86,7 +86,7 @@
           :key="t.name"
           @click="select(t)"
           :class="{
-            'border-4': selectedTicker === t,
+            'border-4': selectedTicker.id === t.id,
           }"
           class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
         >
@@ -137,11 +137,10 @@
     </div>
   </div>
 </template>
-
 <script lang="ts">
 import { defineComponent } from "vue";
-import { ITicker } from "../interfaces";
-import { tickerApi } from "./api";
+import { ITicker, IBroadCastEvent } from "../interfaces";
+import { tickerApi, bc } from "./api";
 
 export default defineComponent({
   name: "App",
@@ -160,7 +159,6 @@ export default defineComponent({
       maxColoumnGraph: 1,
     };
   },
-
   mounted() {
     window.addEventListener("resize", this.calculatedMaxColoumnGraph);
   },
@@ -173,7 +171,6 @@ export default defineComponent({
     let urlParams = new URLSearchParams(window.location.search);
     const urlFilter = urlParams.get("filter");
     const urlPage = urlParams.get("page");
-
     if (urlFilter) {
       this.filter = urlFilter;
     }
@@ -188,6 +185,22 @@ export default defineComponent({
 
     const tickersData = localStorage.getItem("crypto");
     if (tickersData) {
+      bc.addEventListener("message", (e) => {
+        console.log(e);
+
+        const event: IBroadCastEvent = e.data;
+        JSON.parse(tickersData).forEach((ticker: ITicker) => {
+          const tickerForUpdateIndex = this.tickers.findIndex(
+            (ticker: ITicker) => ticker.name === event.currency
+          );
+          if (tickerForUpdateIndex !== -1) {
+            const prevPrice = this.tickers[tickerForUpdateIndex].price;
+            this.tickers[tickerForUpdateIndex].price = event.newPrice
+              ? event.newPrice
+              : prevPrice;
+          }
+        });
+      });
       this.tickers = JSON.parse(tickersData);
       this.tickers.forEach((ticker) => {
         tickerApi.subscribeToTicker(ticker.name, (newPrice: number) => {
@@ -196,6 +209,7 @@ export default defineComponent({
       });
     }
   },
+
   computed: {
     pageStateOption() {
       return {
@@ -252,6 +266,7 @@ export default defineComponent({
       if (updateTickerIndex !== -1) {
         const prevPrice = this.tickers[updateTickerIndex].price;
         this.tickers[updateTickerIndex].price = price ? price : prevPrice;
+        localStorage.setItem("crypto", JSON.stringify(this.tickers));
         if (this.selectedTicker?.id === tickerId && price) {
           this.graph.push(price);
           while (this.graph.length > this.maxColoumnGraph) {
@@ -289,6 +304,12 @@ export default defineComponent({
       tickerApi.subscribeToTicker(newTicker.name, (newPrice: number) => {
         this.updateTickerPrice(newTicker.id, newPrice);
       });
+      bc.postMessage(
+        JSON.stringify({ tickers: this.tickers, action: "add ticker" })
+      );
+      bc.addEventListener("message", (e) => {
+        this.tickers = e.data;
+      });
     },
     select(ticker: ITicker) {
       this.selectedTicker = { ...ticker };
@@ -310,13 +331,12 @@ export default defineComponent({
         .filter((t) => t.includes(this.ticker))
         .slice(0, 4);
     },
-
     tickers() {
       localStorage.setItem("crypto", JSON.stringify(this.tickers));
     },
-
     selectedTicker() {
       this.graph = [];
+      this.$nextTick().then(this.calculatedMaxColoumnGraph);
     },
     paginatedTickers() {
       if (!this.paginatedTickers.length && this.page > 1) {

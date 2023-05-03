@@ -3,3 +3,8 @@ export interface ITicker {
   price: number | string;
   id: string;
 }
+
+export interface IBroadCastEvent{
+  currency:string,
+  newPrice:string
+}
