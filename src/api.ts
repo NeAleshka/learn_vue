@@ -39,19 +39,6 @@ const sendToWebSocket = (
   );
 };
 
-webSocket.addEventListener(
-  "open",
-  () => {
-    webSocket.send(
-      JSON.stringify({
-        action: "SubAdd",
-        subs: ["5~CCCAGG~BTC~USD"],
-      })
-    );
-  },
-  { once: true }
-);
-
 export const bc = new BroadcastChannel(document.title);
 const crossConvertCurrencys: { name: string; priceToBTC: any }[] = [];
 
@@ -75,6 +62,9 @@ webSocket.addEventListener("message", (e) => {
       name: currentCurrynce,
       priceToBTC: newPrice,
     });
+    if (crossConvertCurrencys.length === 1) {
+      sendToWebSocket("BTC", "SubAdd");
+    }
     is500Handling = true;
   }
   if (crossConvertCurrencys.find((c) => c.name === currency)) {
@@ -120,5 +110,6 @@ export const tickerApi = {
   unsubscribeFromTicker(ticker: string) {
     tickersHandler.delete(ticker);
     sendToWebSocket(ticker, "SubRemove");
+    //TODO: delete ticker from crossConvertCurrencys if it include
   },
 };

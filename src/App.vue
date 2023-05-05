@@ -1,61 +1,8 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
-      <section>
-        <div class="flex">
-          <div class="max-w-xs">
-            <label for="wallet" class="block text-sm font-medium text-gray-700"
-              >Тикер</label
-            >
-            <div class="mt-1 relative rounded-md shadow-md">
-              <input
-                v-model="ticker"
-                @keydown.enter="add(ticker)"
-                type="text"
-                name="wallet"
-                id="wallet"
-                class="input"
-                placeholder="Например DOGE"
-              />
-            </div>
-            <div
-              v-if="foundedTickers.length && ticker.length"
-              class="flex bg-white shadow-md p-1 rounded-md flex-wrap w-fit"
-            >
-              <span
-                v-for="t in foundedTickers"
-                @click="add(t)"
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                {{ t }}
-              </span>
-            </div>
-            <div v-if="isExistTicker" class="text-sm text-red-600">
-              Такой тикер уже добавлен
-            </div>
-            <div v-if="incorrectCoin" class="text-sm text-red-600">
-              Такой тикер не существует
-            </div>
-          </div>
-        </div>
-
-        <button
-          @click="add(ticker)"
-          :disabled="!ticker.length || isExistTicker"
-          type="button"
-          :style="
-            !ticker.length || isExistTicker ? { backgroundColor: 'grey' } : {}
-          "
-          class="btn"
-        >
-          <img
-            src="./assets/images/AddIcon.svg"
-            alt="add"
-            class="-ml-0.5 mr-2 h-6 w-6"
-          />
-          Добавить
-        </button>
-      </section>
+      <add-ticker :tickers="tickers" @add-ticker="add" />
+      <search-ticker @change-filter="filteredTickers" />
       <button
         class="navBtn mr-2"
         @click="page -= 1"
@@ -66,10 +13,7 @@
       <button class="navBtn" @click="page += 1" v-if="hasNextPage">
         Вперёд
       </button>
-      <div class="flex items-center space-x-2">
-        <p>Поиск :</p>
-        <input class="input max-w-[300px]" v-model="filter" />
-      </div>
+
       <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4" />
       <div
         class="mx-auto w-fit text-2xl text-red-600"
@@ -141,21 +85,22 @@
 import { defineComponent } from "vue";
 import { ITicker, IBroadCastEvent } from "../interfaces";
 import { tickerApi, bc } from "./api";
+import AddTicker from "./componets/AddTicker.vue";
+import SearchTicker from "./componets/SearchTicker.vue";
 
 export default defineComponent({
   name: "App",
+  components: {
+    AddTicker,
+    SearchTicker,
+  },
   data() {
     return {
-      ticker: "",
       tickers: [] as ITicker[],
       selectedTicker: {} as ITicker,
       graph: [] as number[],
-      isExistTicker: false,
-      coinList: [],
-      foundedTickers: [] as string[],
       filter: "",
       page: 1,
-      incorrectCoin: false,
       maxColoumnGraph: 1,
     };
   },
@@ -178,10 +123,6 @@ export default defineComponent({
     if (urlPage) {
       this.page = Number(urlPage);
     }
-
-    tickerApi.getCoinsList().then((res) => {
-      this.coinList = res.Data;
-    });
 
     const tickersData = localStorage.getItem("crypto");
     if (tickersData) {
@@ -226,7 +167,7 @@ export default defineComponent({
       return this.page * 6;
     },
 
-    filteredTickers() {
+    filteredTickers(filter: string) {
       return this.tickers.filter((t) =>
         t.name.toLowerCase().includes(this.filter.toLowerCase())
       );
@@ -284,23 +225,13 @@ export default defineComponent({
     },
 
     add(tickerName: string) {
-      if (!Object.keys(this.coinList).find((t) => t === tickerName)) {
-        this.incorrectCoin = true;
-        return;
-      }
-      if (this.tickers.find((t) => t.name === tickerName)) {
-        this.isExistTicker = true;
-        return;
-      }
-
       const newTicker: ITicker = {
         name: tickerName.toUpperCase(),
         price: "-",
         id: new Date().toString(),
       };
       this.tickers = [...this.tickers, newTicker];
-      this.ticker = "";
-      this.isExistTicker = false;
+
       tickerApi.subscribeToTicker(newTicker.name, (newPrice: number) => {
         this.updateTickerPrice(newTicker.id, newPrice);
       });
@@ -323,14 +254,6 @@ export default defineComponent({
     },
   },
   watch: {
-    ticker() {
-      this.isExistTicker = false;
-      this.incorrectCoin = false;
-      this.foundedTickers = Object.keys(this.coinList);
-      this.foundedTickers = this.foundedTickers
-        .filter((t) => t.includes(this.ticker))
-        .slice(0, 4);
-    },
     tickers() {
       localStorage.setItem("crypto", JSON.stringify(this.tickers));
     },
