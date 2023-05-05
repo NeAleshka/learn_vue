@@ -1,5 +1,5 @@
 import axios from "axios";
-import { v4 } from "uuid";
+import { IConvertCurrencies } from "../interfaces";
 
 const API_KEY =
   "c2fdab0bddf7507d8d824785213988f466e800388a91b08ae83e37ebd88e43d4";
@@ -40,7 +40,7 @@ const sendToWebSocket = (
 };
 
 export const bc = new BroadcastChannel(document.title);
-const crossConvertCurrencys: { name: string; priceToBTC: any }[] = [];
+let сonvertСurrencies: IConvertCurrencies[] = [];
 
 webSocket.addEventListener("message", (e) => {
   const {
@@ -58,26 +58,26 @@ webSocket.addEventListener("message", (e) => {
   }
   if (type === "500" && !is500Handling) {
     sendToWebSocket(currentCurrynce, "SubAdd", "BTC");
-    crossConvertCurrencys.push({
+    сonvertСurrencies.push({
       name: currentCurrynce,
       priceToBTC: newPrice,
     });
-    if (crossConvertCurrencys.length === 1) {
+    if (сonvertСurrencies.length === 1) {
       sendToWebSocket("BTC", "SubAdd");
     }
     is500Handling = true;
   }
-  if (crossConvertCurrencys.find((c) => c.name === currency)) {
-    const foundedCur = crossConvertCurrencys.findIndex(
+  if (сonvertСurrencies.find((c) => c.name === currency)) {
+    const foundedCur = сonvertСurrencies.findIndex(
       (cur) => cur.name === currency
     );
     if (foundedCur !== -1) {
-      crossConvertCurrencys[foundedCur].priceToBTC = newPrice;
+      сonvertСurrencies[foundedCur].priceToBTC = newPrice;
     }
   }
 
   if (currency === "BTC") {
-    crossConvertCurrencys.forEach((c) => {
+    сonvertСurrencies.forEach((c) => {
       const handlers = tickersHandler.get(c.name) || [];
       handlers.forEach((fn: Function) => {
         fn(c.priceToBTC ? c.priceToBTC * newPrice : 0);
@@ -110,6 +110,6 @@ export const tickerApi = {
   unsubscribeFromTicker(ticker: string) {
     tickersHandler.delete(ticker);
     sendToWebSocket(ticker, "SubRemove");
-    //TODO: delete ticker from crossConvertCurrencys if it include
+    сonvertСurrencies = сonvertСurrencies.filter((c) => c.name !== ticker);
   },
 };
