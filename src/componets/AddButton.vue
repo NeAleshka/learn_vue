@@ -8,3 +8,10 @@
     Добавить
   </button>
 </template>
+<script lang="ts">
+export default {
+  emits: {
+    click: null,
+  },
+};
+</script>

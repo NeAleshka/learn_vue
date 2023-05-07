@@ -12,6 +12,11 @@ export default {
       filter: "",
     };
   },
+  emits: {
+    "change-filter"(filter: string) {
+      return typeof filter === "string";
+    },
+  },
   watch: {
     filter() {
       this.$emit("change-filter", this.filter);

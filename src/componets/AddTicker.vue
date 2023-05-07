@@ -72,17 +72,31 @@ export default defineComponent({
       this.coinList = res.Data;
     });
   },
+  emits: {
+    "add-ticker"(tickerName: string) {
+      return tickerName.length > 0;
+    },
+    click: null,
+  },
   methods: {
     add(tickerName: string) {
       if (!this.ticker.length) {
         return;
       }
 
-      if (!Object.keys(this.coinList).find((t) => t === tickerName)) {
+      if (
+        !Object.keys(this.coinList).find(
+          (t) => t.toUpperCase() === tickerName.toUpperCase()
+        )
+      ) {
         this.incorrectCoin = true;
         return;
       }
-      if (this.tickers.find((t) => t.name === tickerName)) {
+      if (
+        this.tickers.find(
+          (t) => t.name.toUpperCase() === tickerName.toUpperCase()
+        )
+      ) {
         this.isExistTicker = true;
         return;
       }
@@ -97,7 +111,7 @@ export default defineComponent({
       this.incorrectCoin = false;
       this.foundedTickers = Object.keys(this.coinList);
       this.foundedTickers = this.foundedTickers
-        .filter((t) => t.includes(this.ticker))
+        .filter((t) => t.includes(this.ticker.toUpperCase()))
         .slice(0, 4);
     },
   },

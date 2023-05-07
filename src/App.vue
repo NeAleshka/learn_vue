@@ -1,6 +1,7 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
+      <Dialog />
       <add-ticker :tickers="tickers" @add-ticker="add" />
       <search-ticker @change-filter="changeFilter" />
       <button
@@ -46,6 +47,8 @@ import AddTicker from "./componets/AddTicker.vue";
 import SearchTicker from "./componets/SearchTicker.vue";
 import AppTicker from "./componets/Ticker.vue";
 import PricesGraph from "./componets/PricesGraph.vue";
+import Dialog from "./componets/Dialog.vue";
+import AddButton from "./componets/AddButton.vue";
 
 export default defineComponent({
   name: "App",
@@ -54,6 +57,8 @@ export default defineComponent({
     SearchTicker,
     AppTicker,
     PricesGraph,
+    Dialog,
+    AddButton,
   },
   data() {
     return {
@@ -62,6 +67,7 @@ export default defineComponent({
       graph: [] as number[],
       filter: "",
       page: 1,
+      isOpenModal: false,
     };
   },
 
@@ -118,8 +124,6 @@ export default defineComponent({
     },
 
     filteredTickers() {
-      const test = this.filter;
-
       return this.tickers.filter((t) =>
         t.name.toLowerCase().includes(this.filter.toLowerCase())
       );
@@ -134,6 +138,10 @@ export default defineComponent({
     },
   },
   methods: {
+    openDialog() {
+      this.isOpenModal = true;
+    },
+
     changeFilter(newFilter: string) {
       console.log(newFilter);
       this.filter = newFilter;

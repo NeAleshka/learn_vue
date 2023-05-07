@@ -39,6 +39,12 @@ export default defineComponent({
       default: "",
     },
   },
+  emits: {
+    "delete-ticker"(tickerId: string) {
+      return typeof tickerId === "string";
+    },
+    click: null,
+  },
   methods: {
     deleteTicker(tickerId: string) {
       this.$emit("delete-ticker", tickerId);
