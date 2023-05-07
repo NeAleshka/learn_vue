@@ -1,5 +1,7 @@
 <template>
-  <v-btn color="primary" @click="dialog = true">Open modal</v-btn>
+  <v-btn v-if="withButton" color="primary" @click="dialog = true">{{
+    textButton
+  }}</v-btn>
   <v-dialog v-model="dialog" width="auto">
     <v-card>
       <v-card-text>
@@ -16,19 +18,29 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+// import { defineComponent } from "vue";
+import { defineComponent, PropType } from "vue";
+
 export default defineComponent({
   data() {
     return {
       dialog: true,
     };
   },
-
   props: {
+    withButton: {
+      type: Boolean as PropType<boolean>,
+      required: false,
+      default: false,
+    },
     textButton: {
-      type: String,
-      requared: false,
+      type: String as PropType<string>,
+      required: false,
       default: "Open Modal",
+      validator(value:string){
+        if(value==='') return false
+        return true
+      },
     },
   },
   methods: {

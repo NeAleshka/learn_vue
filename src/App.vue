@@ -1,7 +1,7 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
-      <Dialog />
+      <app-dialog :withButton="true" :textButton="''" />
       <add-ticker :tickers="tickers" @add-ticker="add" />
       <search-ticker @change-filter="changeFilter" />
       <button
@@ -47,7 +47,7 @@ import AddTicker from "./componets/AddTicker.vue";
 import SearchTicker from "./componets/SearchTicker.vue";
 import AppTicker from "./componets/Ticker.vue";
 import PricesGraph from "./componets/PricesGraph.vue";
-import Dialog from "./componets/Dialog.vue";
+import AppDialog from "./componets/Dialog.vue";
 import AddButton from "./componets/AddButton.vue";
 
 export default defineComponent({
@@ -57,7 +57,7 @@ export default defineComponent({
     SearchTicker,
     AppTicker,
     PricesGraph,
-    Dialog,
+    AppDialog,
     AddButton,
   },
   data() {
