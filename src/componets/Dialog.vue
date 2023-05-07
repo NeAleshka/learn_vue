@@ -18,13 +18,13 @@
 </template>
 
 <script lang="ts">
-// import { defineComponent } from "vue";
 import { defineComponent, PropType } from "vue";
 
 export default defineComponent({
   data() {
     return {
       dialog: true,
+      textBtn:''
     };
   },
   props: {
@@ -37,12 +37,16 @@ export default defineComponent({
       type: String as PropType<string>,
       required: false,
       default: "Open Modal",
-      validator(value:string){
-        if(value==='') return false
-        return true
+      validator: (value: string) => {
+        if (!value.length) {
+          console.warn("Error");
+          return false;
+        }
+        return true;
       },
     },
   },
+
   methods: {
     closeDialog() {
       this.$emit("close-dialog");
