@@ -2,15 +2,25 @@
   <v-btn v-if="withButton" color="primary" @click="dialog = true">{{
     textButton
   }}</v-btn>
-  <v-dialog v-model="dialog" width="auto">
+  <v-dialog v-model="dialog" width="auto" maxWidth="600px">
     <v-card>
       <v-card-text>
-        <h2>Add new project</h2>
+        <h2>
+          You should get your Api-key on
+          <a
+            class="text-blue-400"
+            href="https://min-api.cryptocompare.com/"
+            target="_blank"
+            >Cryptocompare.com</a
+          >
+          for work this app and enter it below
+        </h2>
       </v-card-text>
       <slot></slot>
-      <v-card-actions>
-        <v-btn color="primary" block @click="dialog = false">
-          Close Dialog
+      <v-card-actions class="justify-end pr-3">
+        <v-btn variant="text" @click="dialog = false"> Cancel </v-btn>
+        <v-btn variant="elevated" color="lime-darken-3" @click="confirm">
+          Confirm
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -18,28 +28,27 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from "vue";
+import { defineComponent } from "vue";
 
 export default defineComponent({
   data() {
     return {
-      dialog: true,
-      textBtn:''
+      dialog: !Boolean(localStorage.getItem("api-key")),
+      apiKey: "",
     };
   },
   props: {
     withButton: {
-      type: Boolean as PropType<boolean>,
+      type: Boolean,
       required: false,
       default: false,
     },
     textButton: {
-      type: String as PropType<string>,
+      type: String,
       required: false,
       default: "Open Modal",
       validator: (value: string) => {
         if (!value.length) {
-          console.warn("Error");
           return false;
         }
         return true;
@@ -48,8 +57,9 @@ export default defineComponent({
   },
 
   methods: {
-    closeDialog() {
-      this.$emit("close-dialog");
+    confirm() {
+      this.$emit("confirm");
+      this.dialog = false;
     },
   },
 });

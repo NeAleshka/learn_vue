@@ -1,27 +1,25 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
-      <app-dialog :withButton="true" :textButton="''" />
+      <app-dialog :withButton="false" @confirm="confirm">
+        <div class="px-3">
+          <input class="input border-2 border-solid" v-model="apiKey" />
+        </div>
+      </app-dialog>
       <add-ticker :tickers="tickers" @add-ticker="add" />
       <search-ticker @change-filter="changeFilter" />
-      <button
-        class="navBtn mr-2"
-        @click="page -= 1"
-        v-if="page > 1 && paginatedTickers.length"
-      >
-        Назад
-      </button>
-      <button class="navBtn" @click="page += 1" v-if="hasNextPage">
-        Вперёд
-      </button>
-
+      <app-pagination
+        :hasNextPage="hasNextPage"
+        :tickersLenght="paginatedTickers.length"
+        @prevPage="page -= 1"
+        @nextPage="page += 1"
+        :page="page"
+      />
       <hr v-if="tickers.length" class="w-full border-t border-gray-600 my-4" />
-      <div
-        class="mx-auto w-fit text-2xl text-red-600"
-        v-if="!filteredTickers.length && filter.length"
-      >
-        Совпадений не найдено
-      </div>
+      <app-error
+        :showIf="Boolean(!filteredTickers.length && filter.length)"
+        :msg="'Совпадений не найдено'"
+      />
       <dl
         class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3"
         v-if="paginatedTickers.length"
@@ -43,12 +41,15 @@
 import { defineComponent } from "vue";
 import { ITicker, IBroadCastEvent } from "../interfaces";
 import { tickerApi, bc } from "./api";
-import AddTicker from "./componets/AddTicker.vue";
-import SearchTicker from "./componets/SearchTicker.vue";
-import AppTicker from "./componets/Ticker.vue";
-import PricesGraph from "./componets/PricesGraph.vue";
-import AppDialog from "./componets/Dialog.vue";
-import AddButton from "./componets/AddButton.vue";
+import {
+  AddTicker,
+  SearchTicker,
+  Ticker as AppTicker,
+  PricesGraph,
+  Dialog as AppDialog,
+  AppPagination,
+  AppError,
+} from "./componets";
 
 export default defineComponent({
   name: "App",
@@ -58,7 +59,8 @@ export default defineComponent({
     AppTicker,
     PricesGraph,
     AppDialog,
-    AddButton,
+    AppPagination,
+    AppError,
   },
   data() {
     return {
@@ -68,6 +70,7 @@ export default defineComponent({
       filter: "",
       page: 1,
       isOpenModal: false,
+      apiKey: "",
     };
   },
 
@@ -138,8 +141,9 @@ export default defineComponent({
     },
   },
   methods: {
-    openDialog() {
-      this.isOpenModal = true;
+    confirm() {
+      localStorage.setItem("api-key", this.apiKey);
+      this.isOpenModal = false;
     },
 
     changeFilter(newFilter: string) {

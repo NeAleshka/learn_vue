@@ -2,6 +2,7 @@ import axios from "axios";
 import { IConvertCurrencies } from "../interfaces";
 
 const API_KEY =
+  localStorage.getItem("api-key") ||
   "c2fdab0bddf7507d8d824785213988f466e800388a91b08ae83e37ebd88e43d4";
 
 const instance = axios.create({
@@ -13,9 +14,9 @@ const webSocket = new WebSocket(
   `wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`
 );
 
-const AGREGATE_INDEX = "5";
+const AGGREGATE_INDEX = "5";
 let is500Handling = false;
-let currentCurrynce = "";
+let currentCurrency = "";
 
 const sendToWebSocket = (
   ticker: string,
@@ -40,16 +41,16 @@ const sendToWebSocket = (
 };
 
 export const bc = new BroadcastChannel(document.title);
-let сonvertСurrencies: IConvertCurrencies[] = [];
+let convertCurrencies: IConvertCurrencies[] = [];
 
 webSocket.addEventListener("message", (e) => {
   const {
     TYPE: type,
     FROMSYMBOL: currency,
     PRICE: newPrice,
-    PARAMETER: parametr,
+    PARAMETER: parameter,
   } = JSON.parse(e.data);
-  if (type === AGREGATE_INDEX) {
+  if (type === AGGREGATE_INDEX) {
     const handlers = tickersHandler.get(currency) || [];
     handlers.forEach((fn: Function) => {
       fn(newPrice, type);
@@ -57,27 +58,27 @@ webSocket.addEventListener("message", (e) => {
     });
   }
   if (type === "500" && !is500Handling) {
-    sendToWebSocket(currentCurrynce, "SubAdd", "BTC");
-    сonvertСurrencies.push({
-      name: currentCurrynce,
+    sendToWebSocket(currentCurrency, "SubAdd", "BTC");
+    convertCurrencies.push({
+      name: currentCurrency,
       priceToBTC: newPrice,
     });
-    if (сonvertСurrencies.length === 1) {
+    if (convertCurrencies.length === 1) {
       sendToWebSocket("BTC", "SubAdd");
     }
     is500Handling = true;
   }
-  if (сonvertСurrencies.find((c) => c.name === currency)) {
-    const foundedCur = сonvertСurrencies.findIndex(
+  if (convertCurrencies.find((c) => c.name === currency)) {
+    const foundedCur = convertCurrencies.findIndex(
       (cur) => cur.name === currency
     );
     if (foundedCur !== -1) {
-      сonvertСurrencies[foundedCur].priceToBTC = newPrice;
+      convertCurrencies[foundedCur].priceToBTC = newPrice;
     }
   }
 
   if (currency === "BTC") {
-    сonvertСurrencies.forEach((c) => {
+    convertCurrencies.forEach((c) => {
       const handlers = tickersHandler.get(c.name) || [];
       handlers.forEach((fn: Function) => {
         fn(c.priceToBTC ? c.priceToBTC * newPrice : 0);
@@ -88,8 +89,8 @@ webSocket.addEventListener("message", (e) => {
       });
     });
   }
-  if (parametr === `5~CCCAGG~${currentCurrynce}~BTC`) {
-    const handlers = tickersHandler.get(currentCurrynce) || [];
+  if (parameter === `5~CCCAGG~${currentCurrency}~BTC`) {
+    const handlers = tickersHandler.get(currentCurrency) || [];
     handlers.forEach((fn: Function) => fn(500));
     is500Handling = false;
   }
@@ -101,7 +102,7 @@ export const tickerApi = {
   },
 
   subscribeToTicker(ticker: string, cb: Function) {
-    currentCurrynce = ticker;
+    currentCurrency = ticker;
     const subscribers = tickersHandler.get(ticker) || [];
     tickersHandler.set(ticker, [...subscribers, cb]);
     sendToWebSocket(ticker, "SubAdd");
@@ -110,6 +111,6 @@ export const tickerApi = {
   unsubscribeFromTicker(ticker: string) {
     tickersHandler.delete(ticker);
     sendToWebSocket(ticker, "SubRemove");
-    сonvertСurrencies = сonvertСurrencies.filter((c) => c.name !== ticker);
+    convertCurrencies = convertCurrencies.filter((c) => c.name !== ticker);
   },
 };
